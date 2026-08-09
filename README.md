@@ -113,6 +113,11 @@ When re-running on the same PR, the existing comment is updated (not duplicated)
 
 PR checks share the Flare daily analysis limit (10/day on free tier). The action gracefully handles rate limits -- it posts a warning but does not fail the workflow.
 
+## Learn more
+
+- [Cloud anomaly detection for GCP and AWS](https://tryflare.ai/cloud-anomaly-detection)
+- [Flare documentation](https://docs.tryflare.ai)
+
 ## License
 
 MIT
