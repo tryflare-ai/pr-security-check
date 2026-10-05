@@ -37,6 +37,12 @@ jobs:
 3. Add the key as a repository secret named `FLARE_API_KEY`
 4. Add the workflow above to `.github/workflows/flare.yml`
 
+### Pull requests from forks
+
+GitHub does not pass repository secrets to workflows triggered by pull requests from forks (or by Dependabot). In that case the action skips the review with a notice and exits successfully, so fork contributors are never blocked by a missing key.
+
+**Use the `pull_request` trigger, not `pull_request_target`.** `pull_request_target` runs with your secrets and a write token in the context of the base repository, so combining it with a checkout of the PR's code lets a fork author run arbitrary code in your workflow. The action is not designed for `pull_request_target` and emits a warning if it detects it.
+
 ## Inputs
 
 | Input | Required | Default | Description |
