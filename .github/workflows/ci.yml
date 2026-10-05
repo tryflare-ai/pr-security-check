@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: lint (zizmor + shellcheck)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install zizmor
+        run: pipx install zizmor==1.30.1
+      - name: Lint
+        run: bash test/lint.sh
+
+  test:
+    name: scripts (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up test Python
+        run: |
+          python3 -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/pip" install --quiet pyyaml==6.0.2
+      # /bin/bash is 3.2 on macOS, so this covers BSD userland and old bash.
+      - name: Run smoke tests
+        run: PYTHON="$RUNNER_TEMP/venv/bin/python" bash test/run.sh
+
+  action:
+    name: uses ./ (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Start stub Flare API and stub gh
+        run: |
+          rm -f /tmp/flare-pwned
+          python3 test/stub_server.py 18080 "$RUNNER_TEMP/stub.log" &
+          mkdir -p "$RUNNER_TEMP/bin"
+          install -m 0755 test/stub-gh.sh "$RUNNER_TEMP/bin/gh"
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+          for _ in $(seq 20); do curl -s -o /dev/null http://127.0.0.1:18080/ && break; sleep 0.25; done
+      - name: Fork PR (no secret) skips cleanly
+        id: fork
+        uses: ./ # zizmor: ignore[self-repository]
+        with:
+          token: ''
+          api-url: http://127.0.0.1:18080/api/webhooks/pr-check
+          paths: 'a";touch${IFS}/tmp/flare-pwned;echo"'
+      - name: Check fork outputs
+        env:
+          FINDINGS: ${{ steps.fork.outputs.findings-count }}
+        run: test "$FINDINGS" = 0
+      - name: Assert no injected command ran
+        if: always()
+        run: test ! -e /tmp/flare-pwned
