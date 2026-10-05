@@ -1,6 +1,10 @@
 # Flare PR Security Check
 
-**Catch IAM misconfigurations, overly broad permissions, and privilege escalation paths before they reach production.** Flare PR Security Check uses AI to review your Terraform, CloudFormation, and IAM policy changes on every pull request -- posting findings with severity scores, plain-English explanations, and specific fix suggestions directly as a PR comment. No rules to maintain, no connector required -- just add your Flare API key and start catching what static scanners miss.
+Review infrastructure changes before merge. Flare analyzes Terraform, CloudFormation and IAM diffs and posts a pull request comment with file references, explanations and suggested fixes.
+
+**Start here:** [Inspect the demo PRs](https://github.com/tryflare-ai/actions-demo) · [Setup and all four Actions](https://tryflare.ai/github-actions)
+
+Requires a Flare account and API key. No cloud connector is required. Start with `fail-on: none` to evaluate findings without blocking merges.
 
 ## Quick start
 
@@ -28,6 +32,8 @@ jobs:
       - uses: tryflare-ai/pr-security-check@v1
         with:
           token: ${{ secrets.FLARE_API_KEY }}
+          api-url: https://tryflare.ai/api/webhooks/pr-check
+          fail-on: none
 ```
 
 ## Setup
@@ -51,7 +57,7 @@ GitHub does not pass repository secrets to workflows triggered by pull requests 
 | `fail-on` | No | `critical` | Minimum severity to fail the check: `critical`, `high`, `medium`, `low`, `none`. |
 | `comment` | No | `true` | Post findings as a PR comment. |
 | `paths` | No | -- | Custom file patterns (comma-separated). Overrides default IaC patterns. |
-| `api-url` | No | `https://www.tryflare.ai/api/webhooks/pr-check` | API endpoint. Override for self-hosted. |
+| `api-url` | No | `https://tryflare.ai/api/webhooks/pr-check` | API endpoint. Override for self-hosted. |
 
 ## Outputs
 
@@ -74,13 +80,12 @@ The action reviews changes to these files by default:
 
 Override with the `paths` input for custom patterns.
 
-## What it detects
+## What it reviews
 
 - Overly broad IAM roles (`roles/editor`, `roles/owner`, wildcard permissions)
 - Missing conditions on IAM bindings
 - Public access (`allUsers`, `allAuthenticatedUsers`, `0.0.0.0/0`)
 - Privilege escalation paths (`setIamPolicy`, `actAs`, `sts:AssumeRole`)
-- Hardcoded secrets and credentials
 - Overly permissive network rules
 - Missing encryption and audit logging
 - Dangerous default configurations
@@ -93,7 +98,7 @@ Override with the `paths` input for custom patterns.
 4. Posts findings as a PR comment with severity, explanation, and fix suggestions
 5. Fails the check if findings meet the `fail-on` threshold
 
-Flare uses Claude to analyze diffs contextually -- it catches security issues that rule-based scanners miss, like subtle privilege escalation paths or misconfigured trust relationships.
+Flare uses Claude to review the supplied diff. Findings can be incomplete or incorrect, especially when surrounding policy or runtime context is absent. Use them alongside review and other security tests.
 
 ## PR comment
 
@@ -127,3 +132,15 @@ PR checks share the Flare daily analysis limit (10/day on free tier). The action
 ## License
 
 MIT
+
+## Data handling and limits
+
+The Action sends relevant diffs, filenames and PR metadata to Flare. Recognizable secrets are redacted from diffs before Anthropic analysis; redaction cannot guarantee removal of every sensitive value. Flare saves analysis results, and this Action can post them in a PR comment. Do not use this review as a secret scanner.
+
+PR checks share the hosted daily analysis allowance. Quota warnings and missing-secret skips can produce a successful workflow without a completed review; read the run logs and PR comment.
+
+The Action code is MIT-licensed; hosted analysis requires a Flare account and is subject to [current service terms](https://tryflare.ai/#pricing). AI findings are review assistance, not proof of compromise or a guarantee that an environment is secure. [Privacy policy](https://tryflare.ai/privacy).
+
+## More Flare Actions
+
+[PR security check](https://github.com/tryflare-ai/pr-security-check) · [Deploy review](https://github.com/tryflare-ai/deploy-webhook) · [Incident scope](https://github.com/tryflare-ai/incident-scope) · [Security changelog](https://github.com/tryflare-ai/security-changelog)
