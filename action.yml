@@ -24,7 +24,7 @@ inputs:
   api-url:
     description: 'Flare API endpoint URL. Override only for self-hosted or staging.'
     required: false
-    default: 'https://www.tryflare.ai/api/webhooks/pr-check'
+    default: 'https://tryflare.ai/api/webhooks/pr-check'
 
 outputs:
   findings-count:
