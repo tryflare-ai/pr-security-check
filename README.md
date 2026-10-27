@@ -127,6 +127,8 @@ PR checks share the Flare daily analysis limit (10/day on free tier). The action
 ## Learn more
 
 - [Cloud anomaly detection for GCP and AWS](https://tryflare.ai/cloud-anomaly-detection)
+- [GitHub audit log analysis and coverage](https://tryflare.ai/github-audit-logs) (separate from this Action)
+- [GitHub organization audit-log investigation guide](https://tryflare.ai/guides/github-organization-audit-log-investigation)
 - [Flare documentation](https://docs.tryflare.ai)
 
 ## License
